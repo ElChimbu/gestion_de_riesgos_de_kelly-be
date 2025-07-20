@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import operationRoutes from './routes/operationRoutes.js';
+import fixedOperationRoutes from './routes/fixedOperationRoutes.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -13,6 +14,9 @@ app.use(express.json());
 
 // Rutas de operaciones normales
 app.use('/api/operations', operationRoutes);
+
+// Rutas de operaciones fijas
+app.use('/api/fixed-operations', fixedOperationRoutes);
 
 // Ruta básica de prueba
 app.get('/', (req, res) => {
