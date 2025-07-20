@@ -6,8 +6,13 @@ import fs from 'fs';
 
 const router = express.Router();
 
-// Configura multer para guardar el archivo temporalmente en disco
-const upload = multer({ dest: 'uploads_tmp/' });
+// Configura multer para usar memoria en lugar de disco (compatible con Vercel)
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB límite
+  }
+});
 
 router.post('/upload', upload.single('file'), async (req, res) => {
   if (!req.file) {
@@ -28,19 +33,14 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   const remotePath = `/uploads/${remoteFileName}`;
 
   try {
-    // Conectar y subir el archivo
+    // Conectar y subir el archivo desde el buffer en memoria
     await sftp.connect(sftpConfig);
-    await sftp.put(req.file.path, remotePath);
+    await sftp.put(req.file.buffer, remotePath);
     await sftp.end();
-
-    // Elimina el archivo temporal
-    fs.unlinkSync(req.file.path);
 
     // Devuelve la URL pública
     res.json({ url: `${process.env.SFTP_PUBLIC_URL}/uploads/${remoteFileName}` });
   } catch (err) {
-    // Limpieza en caso de error
-    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     res.status(500).json({ error: 'Error al subir la imagen', details: err.message });
   }
 });
