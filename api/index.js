@@ -21,6 +21,11 @@ app.get('/', (req, res) => {
   res.send('API de Gestión de Riesgos de Kelly');
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor escuchando en puerto ${PORT}`);
-}); 
+// Para desarrollo local
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Servidor escuchando en puerto ${PORT}`);
+  });
+}
+
+export default app; 

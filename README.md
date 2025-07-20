@@ -1,40 +1,75 @@
-# Backend - Gestión de Riesgos de Kelly
+# API de Gestión de Riesgos de Kelly
 
-## Requisitos
-- Node.js 18+
-- PostgreSQL
+API backend para la gestión de riesgos de Kelly, construida con Node.js, Express y PostgreSQL.
 
-## Instalación
+## Características
 
-1. Clona el repositorio y entra a la carpeta del proyecto.
-2. Copia el archivo `.env.example` a `.env` y configura tu conexión a PostgreSQL.
-3. Instala las dependencias:
+- Gestión de operaciones
+- Operaciones fijas
+- Subida de archivos
+- Base de datos PostgreSQL
+
+## Instalación Local
+
+1. Clona el repositorio
+2. Instala las dependencias:
    ```bash
    npm install
    ```
-4. Crea la base de datos en PostgreSQL (por ejemplo, `kellydb`).
-5. Ejecuta la migración para crear la tabla:
+3. Copia el archivo `env.example` a `.env` y configura las variables de entorno
+4. Ejecuta el servidor:
    ```bash
-   psql -d kellydb -f migrations/001_create_operations_table.sql
+   npm run dev
    ```
 
-## Uso
+## Deploy en Vercel
 
-- Inicia el servidor en modo desarrollo:
-  ```bash
-  npm run dev
-  ```
-- O en modo producción:
-  ```bash
-  npm start
-  ```
+### Requisitos Previos
 
-La API estará disponible en `http://localhost:3000/api/operations`
+1. **Base de datos PostgreSQL**: Necesitas una base de datos PostgreSQL (recomendado: Supabase, PlanetScale, o Railway)
+2. **Cuenta en Vercel**: Crea una cuenta en [vercel.com](https://vercel.com)
+
+### Pasos para el Deploy
+
+1. **Conecta tu repositorio a Vercel**:
+   - Ve a [vercel.com](https://vercel.com)
+   - Importa tu repositorio de GitHub
+   - Vercel detectará automáticamente que es un proyecto Node.js
+
+2. **Configura las variables de entorno**:
+   En el dashboard de Vercel, ve a Settings > Environment Variables y agrega:
+   - `DATABASE_URL`: URL de tu base de datos PostgreSQL
+   - `NODE_ENV`: `production`
+
+3. **Deploy**:
+   - Vercel hará el deploy automáticamente
+   - Cada push a la rama principal activará un nuevo deploy
+
+### Variables de Entorno Requeridas
+
+- `DATABASE_URL`: URL de conexión a PostgreSQL
+- `NODE_ENV`: Entorno de ejecución (production/development)
+- `PORT`: Puerto del servidor (Vercel lo maneja automáticamente)
 
 ## Endpoints
 
-- `GET    /api/operations`         → Devuelve todas las operaciones
-- `POST   /api/operations`         → Crea una operación
-- `PUT    /api/operations/:id`     → Actualiza una operación por id
-- `DELETE /api/operations/:id`     → Elimina una operación por id
-- `DELETE /api/operations`         → Elimina todas las operaciones 
+- `GET /`: Información de la API
+- `GET /api/operations`: Listar operaciones
+- `POST /api/operations`: Crear operación
+- `GET /api/fixed-operations`: Listar operaciones fijas
+- `POST /api/fixed-operations`: Crear operación fija
+- `POST /api/upload`: Subir archivos
+
+## Estructura del Proyecto
+
+```
+├── api/
+│   ├── index.js          # Servidor principal
+│   ├── db.js            # Configuración de base de datos
+│   ├── models/          # Modelos de datos
+│   ├── routes/          # Rutas de la API
+│   └── operations/      # Lógica de operaciones
+├── migrations/          # Migraciones de base de datos
+├── vercel.json         # Configuración de Vercel
+└── package.json        # Dependencias y scripts
+``` 
