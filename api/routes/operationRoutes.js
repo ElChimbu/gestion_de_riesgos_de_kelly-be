@@ -11,8 +11,16 @@ import {
 const router = express.Router();
 
 router.get('/', async (req, res) => {
-  const ops = await getAllOperations();
-  res.json(ops);
+  try {
+    const ops = await getAllOperations();
+    res.json(ops);
+  } catch (error) {
+    console.error('Error in GET /operations:', error);
+    res.status(500).json({ 
+      error: 'Database connection error', 
+      message: error.message 
+    });
+  }
 });
 
 router.post(
@@ -25,12 +33,20 @@ router.post(
     body('kellyUsed').isNumeric()
   ],
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+      const op = await createOperation(req.body);
+      res.status(201).json(op);
+    } catch (error) {
+      console.error('Error in POST /operations:', error);
+      res.status(500).json({ 
+        error: 'Database connection error', 
+        message: error.message 
+      });
     }
-    const op = await createOperation(req.body);
-    res.status(201).json(op);
   }
 );
 
@@ -44,24 +60,48 @@ router.put(
     body('kellyUsed').isNumeric()
   ],
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+      const op = await updateOperation(req.params.id, req.body);
+      if (!op) return res.status(404).json({ error: 'Not found' });
+      res.json(op);
+    } catch (error) {
+      console.error('Error in PUT /operations:', error);
+      res.status(500).json({ 
+        error: 'Database connection error', 
+        message: error.message 
+      });
     }
-    const op = await updateOperation(req.params.id, req.body);
-    if (!op) return res.status(404).json({ error: 'Not found' });
-    res.json(op);
   }
 );
 
 router.delete('/:id', async (req, res) => {
-  await deleteOperation(req.params.id);
-  res.json({ success: true });
+  try {
+    await deleteOperation(req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error in DELETE /operations:', error);
+    res.status(500).json({ 
+      error: 'Database connection error', 
+      message: error.message 
+    });
+  }
 });
 
 router.delete('/', async (req, res) => {
-  await deleteAllOperations();
-  res.json({ success: true });
+  try {
+    await deleteAllOperations();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error in DELETE /operations:', error);
+    res.status(500).json({ 
+      error: 'Database connection error', 
+      message: error.message 
+    });
+  }
 });
 
 export default router; 

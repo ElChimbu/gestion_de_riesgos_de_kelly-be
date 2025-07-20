@@ -21,6 +21,15 @@ app.get('/', (req, res) => {
   res.send('API de Gestión de Riesgos de Kelly');
 });
 
+// Ruta de prueba para verificar que la API funciona
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    message: 'API funcionando correctamente',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 // Para desarrollo local
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
