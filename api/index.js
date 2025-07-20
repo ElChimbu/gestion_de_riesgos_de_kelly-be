@@ -1,8 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import operationRoutes from './routes/operationRoutes.js';
-import fixedOperationRoutes from './routes/fixedOperationRoutes.js';
-import uploadRoutes from './routes/uploadRoutes.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -13,10 +10,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-app.use('/api/operations', operationRoutes);
-app.use('/api/fixed-operations', fixedOperationRoutes);
-app.use('/api', uploadRoutes);
-
+// Ruta básica de prueba
 app.get('/', (req, res) => {
   res.send('API de Gestión de Riesgos de Kelly');
 });
@@ -27,6 +21,14 @@ app.get('/api/test', (req, res) => {
     message: 'API funcionando correctamente',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Ruta de prueba de operaciones (sin base de datos por ahora)
+app.get('/api/operations', (req, res) => {
+  res.json({ 
+    message: 'Ruta de operaciones funcionando',
+    operations: []
   });
 });
 
