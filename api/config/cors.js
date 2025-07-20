@@ -34,6 +34,7 @@ export const corsOptions = {
     
     // Verificar si el origin está en la lista de permitidos
     if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log(`✅ CORS: Origin permitido: ${origin}`);
       callback(null, true);
     } else {
       console.warn(`⚠️ CORS: Origin no permitido: ${origin}`);
