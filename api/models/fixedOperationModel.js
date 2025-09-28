@@ -16,9 +16,12 @@ function mapFixedOperationRow(row) {
   };
 }
 
-export async function getAllFixedOperations() {
+export async function getAllFixedOperations(uid) {
   try {
-    const { rows } = await pool.query('SELECT * FROM fixed_operations ORDER BY id ASC');
+    const { rows } = await pool.query(
+      'SELECT * FROM fixed_operations WHERE uid = $1 ORDER BY id ASC',
+      [uid]
+    );
     return rows.map(mapFixedOperationRow);
   } catch (error) {
     console.error('Error getting fixed operations:', error);
@@ -28,17 +31,17 @@ export async function getAllFixedOperations() {
 
 export async function createFixedOperation(data) {
   try {
-    // Extrae solo los campos válidos, ignora cualquier 'id' recibido
-    let { result, initialCapital, montoRb, finalCapital, riskPercentage, fechaHoraApertura, fechaHoraCierre, observaciones, imagenUrl } = data;
+    // Extrae solo los campos válidos, incluye uid
+    let { result, initialCapital, montoRb, finalCapital, riskPercentage, fechaHoraApertura, fechaHoraCierre, observaciones, imagenUrl, uid } = data;
     // Convertir strings vacíos a null
     fechaHoraApertura = (fechaHoraApertura === '' ? null : fechaHoraApertura);
     fechaHoraCierre = (fechaHoraCierre === '' ? null : fechaHoraCierre);
     observaciones = (observaciones === '' ? null : observaciones);
     imagenUrl = (imagenUrl === '' ? null : imagenUrl);
-    const columns = ['result', 'initialCapital', 'montoRb', 'finalCapital', 'riskPercentage'];
-    const values = [result, initialCapital, montoRb, finalCapital, riskPercentage];
-    const placeholders = ['$1', '$2', '$3', '$4', '$5'];
-    let idx = 6;
+    const columns = ['result', 'initialCapital', 'montoRb', 'finalCapital', 'riskPercentage', 'uid'];
+    const values = [result, initialCapital, montoRb, finalCapital, riskPercentage, uid];
+    const placeholders = ['$1', '$2', '$3', '$4', '$5', '$6'];
+    let idx = 7;
     if (fechaHoraApertura !== undefined) {
       columns.push('fecha_hora_apertura');
       values.push(fechaHoraApertura);
@@ -69,7 +72,7 @@ export async function createFixedOperation(data) {
   }
 }
 
-export async function updateFixedOperation(id, data) {
+export async function updateFixedOperation(id, data, uid) {
   try {
     // Convertir strings vacíos a null en los campos opcionales
     let { fechaHoraApertura, fechaHoraCierre, observaciones, imagenUrl } = data;
@@ -100,8 +103,8 @@ export async function updateFixedOperation(id, data) {
       values.push(imagenUrl);
       idx++;
     }
-    values.push(id);
-    const query = `UPDATE fixed_operations SET ${set.join(', ')} WHERE id = $${idx} RETURNING *`;
+    values.push(id, uid);
+    const query = `UPDATE fixed_operations SET ${set.join(', ')} WHERE id = $${idx} AND uid = $${idx + 1} RETURNING *`;
     const { rows } = await pool.query(query, values);
     return mapFixedOperationRow(rows[0]);
   } catch (error) {
@@ -110,25 +113,29 @@ export async function updateFixedOperation(id, data) {
   }
 }
 
-export async function deleteFixedOperation(id) {
+export async function deleteFixedOperation(id, uid) {
   try {
-    await pool.query('DELETE FROM fixed_operations WHERE id = $1', [id]);
+    const { rowCount } = await pool.query(
+      'DELETE FROM fixed_operations WHERE id = $1 AND uid = $2',
+      [id, uid]
+    );
+    return rowCount > 0;
   } catch (error) {
     console.error('Error deleting fixed operation:', error);
     throw new Error('Database connection error');
   }
 }
 
-export async function deleteAllFixedOperations() {
+export async function deleteAllFixedOperations(uid) {
   try {
-    await pool.query('DELETE FROM fixed_operations');
+    await pool.query('DELETE FROM fixed_operations WHERE uid = $1', [uid]);
   } catch (error) {
     console.error('Error deleting all fixed operations:', error);
     throw new Error('Database connection error');
   }
 }
 
-export async function getFixedOperationsStats() {
+export async function getFixedOperationsStats(uid) {
   try {
     const { rows } = await pool.query(`
       SELECT 
@@ -139,7 +146,8 @@ export async function getFixedOperationsStats() {
           (COUNT(CASE WHEN result = 'Ganada' THEN 1 END)::DECIMAL / COUNT(*)::DECIMAL) * 100, 2
         ) as winrate
       FROM fixed_operations
-    `);
+      WHERE uid = $1
+    `, [uid]);
     return rows[0];
   } catch (error) {
     console.error('Error getting fixed operations stats:', error);

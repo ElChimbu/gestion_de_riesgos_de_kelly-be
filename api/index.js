@@ -3,9 +3,13 @@ import cors from 'cors';
 import operationRoutes from './routes/operationRoutes.js';
 import fixedOperationRoutes from './routes/fixedOperationRoutes.js';
 import { corsOptions, getAllowedOrigins } from './config/cors.js';
+import { initializeFirebase, authenticateToken } from './config/firebase.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+// Inicializar Firebase Admin SDK
+initializeFirebase();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,6 +28,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Middleware de autenticación para todas las rutas de la API
+app.use('/api', authenticateToken);
+
 // Rutas de operaciones normales
 app.use('/api/operations', operationRoutes);
 
@@ -41,7 +48,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// Ruta de prueba para verificar que la API funciona
+// Ruta de prueba para verificar que la API funciona (sin autenticación)
 app.get('/api/test', (req, res) => {
   res.json({ 
     message: 'API funcionando correctamente',
@@ -49,6 +56,20 @@ app.get('/api/test', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     cors: 'enabled',
     allowedOrigins: getAllowedOrigins()
+  });
+});
+
+// Ruta de prueba con autenticación
+app.get('/api/auth-test', authenticateToken, (req, res) => {
+  res.json({ 
+    message: 'Autenticación funcionando correctamente',
+    user: {
+      uid: req.user.uid,
+      email: req.user.email,
+      name: req.user.name
+    },
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -95,19 +116,20 @@ app.use('*', (req, res) => {
     availableRoutes: [
       'GET /',
       'GET /api/test',
+      'GET /api/auth-test (requiere autenticación)',
       'GET /api/health',
       'GET /api/cors-info',
-      'GET /api/operations',
-      'POST /api/operations',
-      'PUT /api/operations/:id',
-      'DELETE /api/operations/:id',
-      'DELETE /api/operations',
-      'GET /api/fixed-operations',
-      'POST /api/fixed-operations',
-      'PUT /api/fixed-operations/:id',
-      'DELETE /api/fixed-operations/:id',
-      'DELETE /api/fixed-operations',
-      'GET /api/fixed-operations/stats'
+      'GET /api/operations (requiere autenticación)',
+      'POST /api/operations (requiere autenticación)',
+      'PUT /api/operations/:id (requiere autenticación)',
+      'DELETE /api/operations/:id (requiere autenticación)',
+      'DELETE /api/operations (requiere autenticación)',
+      'GET /api/fixed-operations (requiere autenticación)',
+      'POST /api/fixed-operations (requiere autenticación)',
+      'PUT /api/fixed-operations/:id (requiere autenticación)',
+      'DELETE /api/fixed-operations/:id (requiere autenticación)',
+      'DELETE /api/fixed-operations (requiere autenticación)',
+      'GET /api/fixed-operations/stats (requiere autenticación)'
     ]
   });
 });

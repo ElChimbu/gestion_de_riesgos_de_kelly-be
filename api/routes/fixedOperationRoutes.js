@@ -14,7 +14,7 @@ const router = express.Router();
 // GET /api/fixed-operations - Obtener todas las operaciones de riesgo fijo
 router.get('/', async (req, res) => {
   try {
-    const ops = await getAllFixedOperations();
+    const ops = await getAllFixedOperations(req.user.uid);
     res.json(ops);
   } catch (err) {
     console.error('Error en GET /fixed-operations:', err);
@@ -83,7 +83,7 @@ router.post(
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-      const op = await createFixedOperation(req.body);
+      const op = await createFixedOperation({ ...req.body, uid: req.user.uid });
       res.status(201).json(op);
     } catch (err) {
       console.error('Error en POST /fixed-operations:', err);
@@ -113,8 +113,8 @@ router.put(
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-      const op = await updateFixedOperation(req.params.id, req.body);
-      if (!op) return res.status(404).json({ error: 'Operación no encontrada' });
+      const op = await updateFixedOperation(req.params.id, req.body, req.user.uid);
+      if (!op) return res.status(404).json({ error: 'Operación no encontrada o no pertenece al usuario' });
       res.json(op);
     } catch (err) {
       console.error('Error en PUT /fixed-operations:', err);
@@ -126,7 +126,10 @@ router.put(
 // DELETE /api/fixed-operations/:id - Eliminar operación de riesgo fijo
 router.delete('/:id', async (req, res) => {
   try {
-    await deleteFixedOperation(req.params.id);
+    const deleted = await deleteFixedOperation(req.params.id, req.user.uid);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Operación no encontrada o no pertenece al usuario' });
+    }
     res.json({ success: true });
   } catch (err) {
     console.error('Error en DELETE /fixed-operations:', err);
@@ -137,7 +140,7 @@ router.delete('/:id', async (req, res) => {
 // DELETE /api/fixed-operations - Eliminar todas las operaciones de riesgo fijo
 router.delete('/', async (req, res) => {
   try {
-    await deleteAllFixedOperations();
+    await deleteAllFixedOperations(req.user.uid);
     res.json({ success: true });
   } catch (err) {
     console.error('Error en DELETE /fixed-operations:', err);
@@ -148,7 +151,7 @@ router.delete('/', async (req, res) => {
 // GET /api/fixed-operations/stats - Obtener estadísticas
 router.get('/stats', async (req, res) => {
   try {
-    const stats = await getFixedOperationsStats();
+    const stats = await getFixedOperationsStats(req.user.uid);
     res.json(stats);
   } catch (err) {
     console.error('Error en GET /fixed-operations/stats:', err);
