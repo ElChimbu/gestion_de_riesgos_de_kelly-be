@@ -6,14 +6,19 @@ Esta API está configurada con CORS (Cross-Origin Resource Sharing) para permiti
 
 ## 🌐 Orígenes Permitidos
 
-### Producción
-- `https://gestion-de-riesgos-de-kelly-fe.vercel.app`
+Los orígenes permitidos se configuran mediante la variable de entorno `ALLOWED_ORIGINS`.
 
-### Desarrollo Local
+### Valores por Defecto (Desarrollo)
 - `http://localhost:5173` (Vite default)
 - `http://localhost:3000` (Puerto alternativo)
 - `http://localhost:4173` (Vite preview)
 - `http://localhost:8080` (Puerto alternativo)
+
+### Producción
+Configura la variable `ALLOWED_ORIGINS` en Vercel con la URL de tu frontend, por ejemplo:
+```
+https://gestion-de-riesgos-de-kelly-fe.vercel.app
+```
 
 ## 🔧 Configuración
 
@@ -130,14 +135,19 @@ Si recibes errores de CORS:
 
 ## 🛠️ Personalización
 
-Para agregar nuevos orígenes, edita `api/config/cors.js`:
+Para configurar orígenes permitidos:
 
-```javascript
-const allowedOrigins = [
-  // ... orígenes existentes
-  'https://tu-nuevo-dominio.com'
-];
+### En Desarrollo Local
+Edita tu archivo `.env`:
 ```
+ALLOWED_ORIGINS=https://tu-dominio.com,http://localhost:5173
+```
+
+### En Producción (Vercel)
+1. Ve a tu proyecto en Vercel
+2. Configuración > Environment Variables
+3. Agrega: `ALLOWED_ORIGINS` con el valor de tu frontend
+4. Redeploy la aplicación
 
 ## 📝 Notas Importantes
 

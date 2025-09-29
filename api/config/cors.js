@@ -1,29 +1,37 @@
 /**
  * Configuración de CORS para la API de Gestión de Riesgos de Kelly
- * 
- * Esta configuración permite peticiones desde:
- * - Frontend de producción: https://gestion-de-riesgos-de-kelly-fe.vercel.app
- * - Frontend de desarrollo local: http://localhost:5173
- * - Otros puertos de desarrollo comunes
+ *
+ * Esta configuración permite peticiones desde orígenes definidos en variables de entorno
+ * o valores por defecto para desarrollo.
  */
 
-// Orígenes permitidos
-const allowedOrigins = [
-  // Frontend de producción
-  'https://gestion-de-riesgos-de-kelly-fe.vercel.app',
-  
+// Orígenes permitidos por defecto (desarrollo)
+const defaultAllowedOrigins = [
   // Frontend de desarrollo local (Vite default)
   'http://localhost:5173',
-  
+
   // Frontend de desarrollo alternativo (puerto 3000)
   'http://localhost:3000',
-  
+
   // Frontend de desarrollo alternativo (puerto 4173 - Vite preview)
   'http://localhost:4173',
-  
+
   // Frontend de desarrollo alternativo (puerto 8080)
   'http://localhost:8080'
 ];
+
+// Función para obtener orígenes permitidos de variables de entorno o usar valores por defecto
+const getAllowedOriginsFromEnv = () => {
+  const envOrigins = process.env.ALLOWED_ORIGINS;
+  if (envOrigins) {
+    // Parsear orígenes separados por comas y limpiar espacios
+    return envOrigins.split(',').map(origin => origin.trim()).filter(origin => origin.length > 0);
+  }
+  return defaultAllowedOrigins;
+};
+
+// Orígenes permitidos
+const allowedOrigins = getAllowedOriginsFromEnv();
 
 // Configuración de CORS
 export const corsOptions = {
