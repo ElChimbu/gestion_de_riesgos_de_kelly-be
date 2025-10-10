@@ -8,6 +8,7 @@ import {
   deleteAllFixedOperations,
   getFixedOperationsStats
 } from '../models/fixedOperationModel.js';
+import { createOperationFromSource } from '../models/operationModel.js';
 
 const router = express.Router();
 
@@ -84,6 +85,25 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
       const op = await createFixedOperation({ ...req.body, uid: req.user.uid });
+
+      // Propagate to global operations table so GET /api/operations sees it.
+      // Use source tracking (source='fixed_operations', sourceId=op.id) to ensure idempotency.
+      try {
+        const isWin = (op.result === 'Ganada' || op.result === 'win');
+        const amount = isWin ? Math.abs(Number(op.montoRb || 0)) : -Math.abs(Number(op.montoRb || 0));
+        await createOperationFromSource({
+          result: op.result,
+          initialCapital: op.initialCapital,
+          montoRb: amount,
+          finalCapital: op.finalCapital,
+          kellyUsed: null,
+          uid: req.user.uid,
+          source: 'fixed_operations',
+          sourceId: String(op.id)
+        });
+      } catch (propErr) {
+        console.warn('Warning: could not propagate fixed operation to operations table:', propErr.message);
+      }
       res.status(201).json(op);
     } catch (err) {
       console.error('Error en POST /fixed-operations:', err);

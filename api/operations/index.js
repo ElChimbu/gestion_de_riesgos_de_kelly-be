@@ -39,7 +39,9 @@ export default async function handler(req, res) {
           result: mappedResult,
           amount,
           date: dateField ? new Date(dateField).toISOString() : new Date().toISOString(),
-          kellyPercent: o.kellyUsed || o.kellyused || o.kelly_percent || undefined
+          kellyPercent: o.kellyUsed || o.kellyused || o.kelly_percent || undefined,
+          source: o.source || null,
+          sourceId: o.source_id || o.sourceId || null
         };
       });
 
@@ -58,17 +60,29 @@ export default async function handler(req, res) {
             result: isWin ? 'win' : 'loss',
             amount,
             date: dateField ? new Date(dateField).toISOString() : new Date().toISOString(),
-            kellyPercent: undefined
+            kellyPercent: undefined,
+            source: 'fixed_operations',
+            sourceId: String(f.id)
           };
         });
       } catch (err) {
         console.warn('Could not fetch fixed operations for aggregation:', err.message);
       }
 
-      // Combine both sets
+      // Combine both sets and deduplicate: prefer operations table rows; use source+sourceId to detect duplicates
       let combined = [...ops, ...fixedOps];
 
-      combined = combined.sort((a, b) => new Date(a.date) - new Date(b.date));
+      const seen = new Set();
+      const deduped = [];
+      for (const item of combined) {
+        // generate a dedupe key: prefer source/sourceId when present, else id
+        const key = item.source && item.sourceId ? `${item.source}:${item.sourceId}` : String(item.id);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        deduped.push(item);
+      }
+
+      combined = deduped.sort((a, b) => new Date(a.date) - new Date(b.date));
       if (sort === 'desc') combined = combined.reverse();
       if (limit) combined = combined.slice(0, Number(limit));
 
