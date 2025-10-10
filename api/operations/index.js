@@ -1,4 +1,5 @@
 import { getAllOperations, createOperation, deleteAllOperations } from '../../models/operationModel.js';
+import { getAllFixedOperations } from '../../models/fixedOperationModel.js';
 import { allowCors } from '../_helpers/cors.js';
 import { getUidFromReq } from '../_helpers/firebase.js';
 
@@ -15,9 +16,10 @@ export default async function handler(req, res) {
       } catch (err) {
         return res.status(401).json({ error: 'Unauthorized', message: err.message });
       }
-      let ops = await getAllOperations(uid);
+  let ops = await getAllOperations(uid);
 
-      ops = ops.map(o => {
+  // Map operations table rows to unified shape
+  ops = ops.map(o => {
         // tolerate different column namings (camelCase or lowercase)
         const resultField = o.result || o.result;
         const mappedResult = (resultField === 'Ganada' || resultField === 'win') ? 'win' : 'loss';
@@ -41,17 +43,42 @@ export default async function handler(req, res) {
         };
       });
 
-      ops = ops.sort((a, b) => new Date(a.date) - new Date(b.date));
-      if (sort === 'desc') ops = ops.reverse();
-      if (limit) ops = ops.slice(0, Number(limit));
+      // Fetch fixed operations and map to unified shape
+      let fixedOps = [];
+      try {
+        const fixedRows = await getAllFixedOperations(uid);
+        fixedOps = fixedRows.map(f => {
+          const isWin = (f.result === 'Ganada' || f.result === 'win');
+          const raw = Number(f.montoRb || 0);
+          const amount = isWin ? Math.abs(raw) : -Math.abs(raw);
+          const dateField = f.fechaHoraCierre || f.fechaHoraApertura || null;
+          return {
+            id: `fixed-${f.id}`,
+            type: 'fixed',
+            result: isWin ? 'win' : 'loss',
+            amount,
+            date: dateField ? new Date(dateField).toISOString() : new Date().toISOString(),
+            kellyPercent: undefined
+          };
+        });
+      } catch (err) {
+        console.warn('Could not fetch fixed operations for aggregation:', err.message);
+      }
+
+      // Combine both sets
+      let combined = [...ops, ...fixedOps];
+
+      combined = combined.sort((a, b) => new Date(a.date) - new Date(b.date));
+      if (sort === 'desc') combined = combined.reverse();
+      if (limit) combined = combined.slice(0, Number(limit));
 
       if (meta === 'true' || process.env.INITIAL_CAPITAL) {
         const metaObj = {};
         if (process.env.INITIAL_CAPITAL) metaObj.initialCapital = Number(process.env.INITIAL_CAPITAL);
-        return res.status(200).json({ operations: ops, meta: Object.keys(metaObj).length ? metaObj : undefined });
+        return res.status(200).json({ operations: combined, meta: Object.keys(metaObj).length ? metaObj : undefined });
       }
 
-      return res.status(200).json(ops);
+      return res.status(200).json(combined);
     }
 
     if (req.method === 'POST') {
