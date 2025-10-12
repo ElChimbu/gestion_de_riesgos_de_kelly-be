@@ -18,11 +18,20 @@ export async function createOperation(data) {
     // Accept optional source tracking for idempotency (e.g. fixed_operations)
     const { result, initialCapital, montoRb, finalCapital, kellyUsed, uid, source, sourceId } = data;
 
-    // Build columns/values dynamically so we only insert provided fields
-    const columns = ['result', 'initialCapital', 'montoRb', 'finalCapital', 'kellyUsed', 'uid'];
-    const values = [result, initialCapital, montoRb, finalCapital, kellyUsed, uid];
-    const placeholders = ['$1', '$2', '$3', '$4', '$5', '$6'];
-    let idx = 7;
+    // Build columns/values dynamically so we only insert provided fields.
+    // IMPORTANT: `kellyUsed` may be null when propagating from fixed operations; the DB
+    // currently enforces NOT NULL for kellyUsed, so avoid inserting the column when it's
+    // not provided to prevent constraint violations.
+    const columns = ['result', 'initialCapital', 'montoRb', 'finalCapital', 'uid'];
+    const values = [result, initialCapital, montoRb, finalCapital, uid];
+    const placeholders = ['$1', '$2', '$3', '$4', '$5'];
+    let idx = 6;
+
+    if (kellyUsed !== undefined && kellyUsed !== null) {
+      columns.splice(4, 0, 'kellyUsed'); // insert before uid for readability
+      values.splice(4, 0, kellyUsed);
+      placeholders.splice(4, 0, `$${idx++}`);
+    }
 
     if (source !== undefined) {
       columns.push('source');

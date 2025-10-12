@@ -89,6 +89,23 @@ export default async function handler(req, res) {
       if (meta === 'true' || process.env.INITIAL_CAPITAL) {
         const metaObj = {};
         if (process.env.INITIAL_CAPITAL) metaObj.initialCapital = Number(process.env.INITIAL_CAPITAL);
+
+        // Sync metadata: how many fixed_operations have been propagated into operations table
+        try {
+          // Build a set of propagated fixed ids from operations rows (ops mapping contains source/sourceId)
+          const propagatedSet = new Set(ops.filter(o => o.source === 'fixed_operations' && o.sourceId).map(o => String(o.sourceId)));
+          const fixedTotal = fixedOps.length;
+          const propagated = fixedOps.filter(f => propagatedSet.has(String(f.id))).length;
+          metaObj.sync = {
+            fixedTotal,
+            propagated,
+            allSynced: fixedTotal === propagated
+          };
+        } catch (syncErr) {
+          // non-blocking: include a warning in meta if sync calculation fails
+          metaObj.sync = { error: 'sync_check_failed', message: String(syncErr.message) };
+        }
+
         return res.status(200).json({ operations: combined, meta: Object.keys(metaObj).length ? metaObj : undefined });
       }
 
